@@ -92,6 +92,20 @@ command|/usr/bin/jpegtran|2026-05-04T14:31:00-03:00|admin|JPEG optimization
 command|/usr/bin/gifsicle|2026-05-04T14:32:00-03:00|admin|GIF optimization
 ```
 
+**Protection against Command Injection (Nesting):**
+Even if a binary is allowed in the whitelist (e.g., `/usr/bin/optipng`), the extension performs a strict scan across the entire command string before allowing execution. It instantly blocks any shell injection attempt using the following operators:
+```text
+;  &&  ||  |  >>  >  <  `  $(  ${  \n  \r
+```
+This renders RCE techniques impossible, such as:
+- `optipng file.png ; cat /etc/passwd`
+- `optipng file.png | sh`
+- `optipng file.png > /var/www/html/shell.php`
+- `optipng $(whoami)`
+
+**Protection against Download + Execution:**
+If an attacker uses PHP to download a malicious script (e.g., via `file_get_contents` or `curl`) and saves it to disk, they will not be able to execute it via a command (e.g., `exec('/bin/bash payload.sh')`) unless `/bin/bash` is explicitly in the whitelist. The extension intercepts the call, extracts the main binary, and refuses the execution of unauthorized binaries. If a valid binary is used, the extension rigorously logs the binary and all its arguments into the JSONL audit log.
+
 ---
 
 #### Local File Access
@@ -190,6 +204,7 @@ Example configuration:
 extension=security_guard.so
 
 security_guard.enabled=1
+; Modes: off, monitor, block
 security_guard.enforcement_mode=monitor
 
 security_guard.allowed_commands_file=/etc/security_guard/allowed_commands.conf

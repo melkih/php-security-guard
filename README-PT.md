@@ -94,6 +94,20 @@ command|/usr/bin/jpegtran|2026-05-04T14:31:00-03:00|admin|Otimização de JPEG
 command|/usr/bin/gifsicle|2026-05-04T14:32:00-03:00|admin|Otimização de GIF
 ```
 
+**Proteção contra Command Injection (Aninhamento):**
+Mesmo que um binário seja permitido na whitelist (ex: `/usr/bin/optipng`), a extensão faz uma varredura rigorosa em toda a string de comando antes de liberar a execução. Ela bloqueia instantaneamente qualquer tentativa de injeção de shell usando os seguintes operadores:
+```text
+;  &&  ||  |  >>  >  <  `  $(  ${  \n  \r
+```
+Isso torna impossível técnicas de RCE como:
+- `optipng file.png ; cat /etc/passwd`
+- `optipng file.png | sh`
+- `optipng file.png > /var/www/html/shell.php`
+- `optipng $(whoami)`
+
+**Proteção contra Download + Execução:**
+Se um atacante usar o PHP para baixar um script malicioso (ex: via `file_get_contents` ou `curl`) e salvá-lo no disco, ele não conseguirá executá-lo via comando (ex: `exec('/bin/bash payload.sh')`) a menos que `/bin/bash` esteja na whitelist. A extensão intercepta a chamada, extrai o binário principal e recusa a execução de binários não autorizados. Caso um binário válido seja utilizado, a extensão registra rigorosamente o binário e os argumentos no log JSONL.
+
 ---
 
 #### Acesso local a arquivos
@@ -192,6 +206,7 @@ Exemplo de configuração:
 extension=security_guard.so
 
 security_guard.enabled=1
+; Modos: off, monitor, block
 security_guard.enforcement_mode=monitor
 
 security_guard.allowed_commands_file=/etc/security_guard/allowed_commands.conf
