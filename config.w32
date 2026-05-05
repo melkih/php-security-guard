@@ -1,0 +1,17 @@
+// config.w32 for security_guard — Windows build support
+ARG_ENABLE("security-guard", "security_guard support", "no");
+
+if (PHP_SECURITY_GUARD != "no") {
+    EXTENSION("security_guard",
+        "security_guard.c " +
+        "src\\config_loader.c " +
+        "src\\policy_engine.c " +
+        "src\\command_policy.c " +
+        "src\\file_policy.c " +
+        "src\\network_policy.c " +
+        "src\\logger.c " +
+        "src\\php_hooks.c " +
+        "src\\utils.c");
+    ADD_FLAG("CFLAGS_SECURITY_GUARD", "/I" + configure_module_dirname + "\\include");
+    AC_DEFINE("HAVE_SECURITY_GUARD", 1, "security_guard support");
+}
