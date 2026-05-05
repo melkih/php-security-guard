@@ -507,7 +507,9 @@ O projeto inclui uma classe PHP pronta para gerenciar as whitelists da extensão
    Copie o arquivo `cwp-plugin/index.php` para o mesmo diretório onde você colocou a classe `SecurityGuardPlugin.php` (por exemplo: `/usr/local/cwpsrv/htdocs/resources/admin/modules/security_guard/`).
 
 4. **Acesso no Painel:**
-   Se você seguiu o padrão de módulos do CWP, basta acessar a URL do módulo (algo como `https://seu-ip:2031/admin/index.php?module=security_guard`) e você verá a tela de gerenciamento.
+   No CWP, o nome do módulo na URL deve corresponder exatamente ao nome da pasta que você criou. 
+   Por exemplo, se você colocou os arquivos dentro da pasta `mk`, a URL será:
+   `https://seu-ip:2031/admin/index.php?module=mk`
    
    *Nota: O script `index.php` foi feito para rodar integrado ao fluxo do CWP e já cuida do processamento dos formulários e da renderização das tabelas HTML (Comandos, Arquivos e Redes).*
 
