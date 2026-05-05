@@ -502,39 +502,14 @@ O projeto inclui uma classe PHP pronta para gerenciar as whitelists da extensão
    chmod 660 /etc/security_guard/*.conf
    ```
 
-3. **Como usar no código do seu módulo (Backend/Controller):**
-   O arquivo `SecurityGuardPlugin.php` não é uma tela gráfica pronta. Ele é uma biblioteca (uma "ferramenta" em código) que seu módulo do CWP vai usar para conversar com a extensão.
+3. **Instalação da Tela do Painel (Frontend + Backend):**
+   O projeto agora inclui uma interface gráfica pronta (`index.php`) construída com Bootstrap, pronta para ser acoplada ao CWP.
+   Copie o arquivo `cwp-plugin/index.php` para o mesmo diretório onde você colocou a classe `SecurityGuardPlugin.php` (por exemplo: `/usr/local/cwpsrv/htdocs/resources/admin/modules/security_guard/`).
+
+4. **Acesso no Painel:**
+   Se você seguiu o padrão de módulos do CWP, basta acessar a URL do módulo (algo como `https://seu-ip:2031/admin/index.php?module=security_guard`) e você verá a tela de gerenciamento.
    
-   Você deve criar o seu próprio arquivo PHP do módulo (por exemplo: `module_security_guard.php`) no CWP e incluir essa classe nele. Sempre que o administrador clicar em "Salvar" na tela do CWP, seu arquivo PHP chamará os métodos dessa classe para gravar as regras.
-
-   **Exemplo de integração no seu arquivo PHP do módulo:**
-   ```php
-   // 1. Inclui o arquivo da biblioteca
-   require_once 'SecurityGuardPlugin.php';
-
-   // 2. Cria o gerenciador de regras
-   $plugin = new SecurityGuardPlugin();
-
-   // 3. Se o administrador enviou um formulário adicionando um comando
-   if (isset($_POST['action']) && $_POST['action'] === 'add_command') {
-       $novoComando = $_POST['comando']; // ex: /usr/bin/git
-       $adminUser = 'admin'; // Usuário logado no CWP
-       $obs = 'Adicionado pelo painel';
-       
-       // Chama o plugin para salvar o comando no arquivo .conf
-       $plugin->addCommand($novoComando, $adminUser, $obs);
-       echo "Comando salvo com sucesso!";
-   }
-
-   // Exemplo: Listando regras de rede para montar uma tabela HTML
-   $redes = $plugin->listNetwork();
-   foreach ($redes as $regra) {
-       echo "Tipo: {$regra['type']}, Valor: {$regra['value']}, Adicionado por: {$regra['user']}\n";
-   }
-   ```
-
-4. **Interface Gráfica (Frontend):**
-   No CWP, a interface visual (botões, campos de texto e tabelas) é construída por você usando HTML/Twig. Os botões da interface devem enviar requisições (via POST ou Ajax) para o código PHP (backend) mostrado no passo 3, que por sua vez usará o `SecurityGuardPlugin` para gravar as regras nos arquivos `/etc/security_guard/`.
+   *Nota: O script `index.php` foi feito para rodar integrado ao fluxo do CWP e já cuida do processamento dos formulários e da renderização das tabelas HTML (Comandos, Arquivos e Redes).*
 
 ---
 
