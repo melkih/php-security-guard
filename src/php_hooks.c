@@ -17,6 +17,8 @@
 void (*sg_original_execute_ex)(zend_execute_data *execute_data) = NULL;
 void (*sg_original_execute_internal)(zend_execute_data *execute_data, zval *return_value) = NULL;
 
+static void sg_call_original(zend_execute_data *execute_data, zval *return_value, int is_internal);
+
 /* ---- curl handle tracking ---- */
 
 /**
