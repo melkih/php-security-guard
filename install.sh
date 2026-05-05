@@ -151,7 +151,14 @@ resolve_paths() {
                 PHP_BIN="${PHP_BIN:-php}"
             fi
             EXT_DIR="$("$PHP_CONFIG_BIN" --extension-dir 2>/dev/null || echo /usr/lib/php)"
-            INI_DIR="${INI_DIR:-/etc/php.d}"
+            local scan_dir
+            scan_dir="$("$PHP_BIN" --ini 2>/dev/null | grep -i 'Scan for additional \.ini files in' | cut -d: -f2 | tr -d ' ')"
+            if [[ -n "$scan_dir" && "$scan_dir" != "(none)" ]]; then
+                INI_DIR="$scan_dir"
+            else
+                # Se não tem diretório de scan, caímos pro fallback
+                INI_DIR="${INI_DIR:-/etc/php.d}"
+            fi
             FPM_SERVICE="php-fpm"
             ;;
     esac
