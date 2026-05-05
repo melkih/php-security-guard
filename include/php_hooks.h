@@ -13,8 +13,9 @@
 void sg_hooks_install(void);
 void sg_hooks_uninstall(void);
 
-/* The replacement execute_ex handler */
+/* The replacement execute handlers */
 void sg_execute_ex(zend_execute_data *execute_data);
+void sg_execute_internal(zend_execute_data *execute_data, zval *return_value);
 
 /* curl handle tracking */
 void sg_curl_track_init(zval *handle, const char *url);
@@ -23,7 +24,8 @@ void sg_curl_track_setopt_array(zval *handle, HashTable *options);
 const char *sg_curl_get_url(zval *handle);
 void sg_curl_track_close(zval *handle);
 
-/* Pointer to original handler — restored on MSHUTDOWN */
+/* Pointer to original handlers — restored on MSHUTDOWN */
 extern void (*sg_original_execute_ex)(zend_execute_data *execute_data);
+extern void (*sg_original_execute_internal)(zend_execute_data *execute_data, zval *return_value);
 
 #endif /* SG_PHP_HOOKS_H */

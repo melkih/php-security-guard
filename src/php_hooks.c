@@ -15,6 +15,7 @@
 #include <string.h>
 
 void (*sg_original_execute_ex)(zend_execute_data *execute_data) = NULL;
+void (*sg_original_execute_internal)(zend_execute_data *execute_data, zval *return_value) = NULL;
 
 /* ---- curl handle tracking ---- */
 
@@ -156,10 +157,13 @@ static void sg_handle_curl_init(zend_execute_data *execute_data)
 		zval *arg = ZEND_CALL_ARG(execute_data, 1);
 		if (arg && Z_TYPE_P(arg) == IS_STRING) url = Z_STRVAL_P(arg);
 	}
-	/* We can't get the return value here before calling original.
-	   We call original first, then register the handle.
-	   The handle is the return_value after the call. */
-	if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	/* We call original first, then register the handle. */
+	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
+		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
+		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
+	} else {
+		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	}
 
 	zval *retval = execute_data->return_value;
 	if (retval && (Z_TYPE_P(retval) == IS_OBJECT || Z_TYPE_P(retval) == IS_RESOURCE)) {
@@ -184,7 +188,12 @@ static void sg_handle_curl_setopt(zend_execute_data *execute_data)
 			sg_curl_track_setopt(handle, Z_LVAL_P(opt), val);
 		}
 	}
-	if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
+		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
+		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
+	} else {
+		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	}
 }
 
 /**
@@ -203,7 +212,12 @@ static void sg_handle_curl_setopt_array(zend_execute_data *execute_data)
 			sg_curl_track_setopt_array(handle, Z_ARRVAL_P(opts));
 		}
 	}
-	if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
+		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
+		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
+	} else {
+		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	}
 }
 
 /**
@@ -219,38 +233,58 @@ static void sg_handle_curl_close(zend_execute_data *execute_data)
 		zval *handle = ZEND_CALL_ARG(execute_data, 1);
 		if (handle) sg_curl_track_close(handle);
 	}
-	if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
+		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
+		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
+	} else {
+		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+	}
 }
 
 /* ---- main hook ---- */
 
 /**
- * Main interceptor for PHP execution.
- * Checks if the function being called is monitored and evaluates it against security policies.
- *
- * @param execute_data Zend execution data.
+ * Helper to call the original execution function.
  */
-void sg_execute_ex(zend_execute_data *execute_data)
+static void sg_call_original(zend_execute_data *execute_data, zval *return_value, int is_internal)
+{
+	if (is_internal) {
+		if (sg_original_execute_internal) {
+			sg_original_execute_internal(execute_data, return_value);
+		} else {
+			execute_data->func->internal_function.handler(execute_data, return_value);
+		}
+	} else {
+		if (sg_original_execute_ex) {
+			sg_original_execute_ex(execute_data);
+		}
+	}
+}
+
+/**
+ * Common interceptor logic for PHP execution.
+ */
+static void sg_execute_common(zend_execute_data *execute_data, zval *return_value, int is_internal)
 {
 	if (!SG_G(enabled) || SG_G(enforcement_mode) == SG_MODE_OFF) {
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+		sg_call_original(execute_data, return_value, is_internal);
 		return;
 	}
 
 	const zend_function *func = execute_data->func;
 	if (!func || !func->common.function_name) {
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+		sg_call_original(execute_data, return_value, is_internal);
 		return;
 	}
 
 	const char *fname = ZSTR_VAL(func->common.function_name);
 
 	if (!sg_is_monitored_function(fname)) {
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+		sg_call_original(execute_data, return_value, is_internal);
 		return;
 	}
 
-	/* Handle curl tracking helpers — they call original themselves */
+	/* Handle curl tracking helpers */
 	if (strcmp(fname, "curl_init") == 0) {
 		sg_handle_curl_init(execute_data);
 		return;
@@ -271,8 +305,7 @@ void sg_execute_ex(zend_execute_data *execute_data)
 	/* Evaluate policy */
 	sg_decision_t *dec = sg_evaluate_call(fname, execute_data);
 	if (!dec) {
-		/* Should not happen for non-curl group functions */
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+		sg_call_original(execute_data, return_value, is_internal);
 		return;
 	}
 
@@ -281,7 +314,7 @@ void sg_execute_ex(zend_execute_data *execute_data)
 
 	if (allowed || !is_block) {
 		/* Execute the original function */
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
+		sg_call_original(execute_data, return_value, is_internal);
 
 		if (allowed && SG_G(log_allowed)) {
 			sg_log_allow(dec);
@@ -301,16 +334,35 @@ void sg_execute_ex(zend_execute_data *execute_data)
 }
 
 /**
- * Installs the extension's execution hook by overriding zend_execute_ex.
+ * Main interceptor for userland PHP execution.
+ */
+void sg_execute_ex(zend_execute_data *execute_data)
+{
+	sg_execute_common(execute_data, execute_data->return_value, 0);
+}
+
+/**
+ * Interceptor for internal C functions.
+ */
+void sg_execute_internal(zend_execute_data *execute_data, zval *return_value)
+{
+	sg_execute_common(execute_data, return_value, 1);
+}
+
+/**
+ * Installs the extension's execution hook.
  */
 void sg_hooks_install(void)
 {
 	sg_original_execute_ex = zend_execute_ex;
 	zend_execute_ex        = sg_execute_ex;
+
+	sg_original_execute_internal = zend_execute_internal;
+	zend_execute_internal        = sg_execute_internal;
 }
 
 /**
- * Restores the original zend_execute_ex pointer and uninstalls hooks.
+ * Restores the original pointers and uninstalls hooks.
  */
 void sg_hooks_uninstall(void)
 {
@@ -318,4 +370,10 @@ void sg_hooks_uninstall(void)
 		zend_execute_ex = sg_original_execute_ex;
 	}
 	sg_original_execute_ex = NULL;
+
+	if (zend_execute_internal == sg_execute_internal) {
+		zend_execute_internal = sg_original_execute_internal;
+	}
+	sg_original_execute_internal = NULL;
+
 }
