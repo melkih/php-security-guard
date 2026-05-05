@@ -582,9 +582,9 @@ void sg_json_escape(const char *in, char *out, size_t out_len)
 void sg_entry_free(sg_entry_t *entry)
 {
 	if (!entry) return;
-	if (entry->value) efree(entry->value);
-	if (entry->raw)   efree(entry->raw);
-	efree(entry);
+	if (entry->value) pefree(entry->value, 1);
+	if (entry->raw)   pefree(entry->raw, 1);
+	pefree(entry, 1);
 }
 
 /**

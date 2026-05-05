@@ -89,13 +89,13 @@ static void sg_insert_network_entry(HashTable *ht, const char *type_str,
 
 	/* Dedup: skip if already present */
 	if (zend_hash_str_find(ht, key, strlen(key)) != NULL) {
-		efree(key);
+		pefree(key, 1);
 		return;
 	}
 
-	sg_entry_t *entry = ecalloc(1, sizeof(sg_entry_t));
-	entry->value    = estrdup(key);
-	entry->raw      = estrdup(value);
+	sg_entry_t *entry = pecalloc(1, sizeof(sg_entry_t), 1);
+	entry->value    = pestrdup(key, 1);
+	entry->raw      = pestrdup(value, 1);
 	entry->net_type = net_type;
 	entry->is_ipv6  = 0;
 
@@ -109,7 +109,7 @@ static void sg_insert_network_entry(HashTable *ht, const char *type_str,
 	}
 
 	zend_hash_str_add_ptr(ht, key, strlen(key), entry);
-	efree(key);
+	pefree(key, 1);
 }
 
 /**
@@ -123,9 +123,9 @@ static void sg_insert_simple_entry(HashTable *ht, const char *value)
 	/* Dedup */
 	if (zend_hash_str_find(ht, value, strlen(value)) != NULL) return;
 
-	sg_entry_t *entry = ecalloc(1, sizeof(sg_entry_t));
-	entry->value = estrdup(value);
-	entry->raw   = estrdup(value);
+	sg_entry_t *entry = pecalloc(1, sizeof(sg_entry_t), 1);
+	entry->value = pestrdup(value, 1);
+	entry->raw   = pestrdup(value, 1);
 
 	zend_hash_str_add_ptr(ht, value, strlen(value), entry);
 }
@@ -203,7 +203,7 @@ int sg_load_conf_file(const char *path, HashTable *ht, const char *type_filter,
 char *sg_normalize_network_key(int net_type, const char *value)
 {
 	if (!value) return NULL;
-	char *key = estrdup(value);
+	char *key = pestrdup(value, 1);
 
 	if (net_type == SG_NET_TYPE_DOMAIN) {
 		/* lowercase + strip trailing dot */
@@ -272,16 +272,16 @@ static void sg_free_entry_ht(zval *zv)
  */
 sg_config_t *sg_config_load(void)
 {
-	sg_config_t *cfg = ecalloc(1, sizeof(sg_config_t));
+	sg_config_t *cfg = pecalloc(1, sizeof(sg_config_t), 1);
 
-	ALLOC_HASHTABLE(cfg->commands);
-	zend_hash_init(cfg->commands, 64, NULL, sg_free_entry_ht, 0);
+	cfg->commands = pemalloc(sizeof(HashTable), 1);
+	zend_hash_init(cfg->commands, 64, NULL, sg_free_entry_ht, 1);
 
-	ALLOC_HASHTABLE(cfg->files);
-	zend_hash_init(cfg->files, 64, NULL, sg_free_entry_ht, 0);
+	cfg->files = pemalloc(sizeof(HashTable), 1);
+	zend_hash_init(cfg->files, 64, NULL, sg_free_entry_ht, 1);
 
-	ALLOC_HASHTABLE(cfg->network);
-	zend_hash_init(cfg->network, 128, NULL, sg_free_entry_ht, 0);
+	cfg->network = pemalloc(sizeof(HashTable), 1);
+	zend_hash_init(cfg->network, 128, NULL, sg_free_entry_ht, 1);
 
 	const char *cmd_file = SG_G(allowed_commands_file);
 	const char *fil_file = SG_G(allowed_files_file);
@@ -312,17 +312,17 @@ void sg_config_free(sg_config_t *cfg)
 	if (!cfg) return;
 	if (cfg->commands) {
 		zend_hash_destroy(cfg->commands);
-		FREE_HASHTABLE(cfg->commands);
+		pefree(cfg->commands, 1);
 	}
 	if (cfg->files) {
 		zend_hash_destroy(cfg->files);
-		FREE_HASHTABLE(cfg->files);
+		pefree(cfg->files, 1);
 	}
 	if (cfg->network) {
 		zend_hash_destroy(cfg->network);
-		FREE_HASHTABLE(cfg->network);
+		pefree(cfg->network, 1);
 	}
-	efree(cfg);
+	pefree(cfg, 1);
 }
 
 /**
