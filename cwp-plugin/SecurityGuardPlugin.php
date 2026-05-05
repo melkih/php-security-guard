@@ -32,6 +32,7 @@ class SecurityGuardPlugin
      * @param string $networkFile Path to network whitelist
      * @param string $adminLog Path to admin audit log
      */
+    public function __construct(
         string $commandsFile = '/etc/security_guard/allowed_commands.conf',
         string $filesFile    = '/etc/security_guard/allowed_files.conf',
         string $networkFile  = '/etc/security_guard/allowed_network.conf',
@@ -52,6 +53,7 @@ class SecurityGuardPlugin
      *
      * @return array List of commands with metadata (type, value, date, user, obs)
      */
+    public function listCommands(): array
     {
         return $this->loadConf($this->commandsFile, ['command']);
     }
@@ -65,6 +67,7 @@ class SecurityGuardPlugin
      * @param string $obs Optional observation/reason
      * @return bool True on success, false otherwise
      */
+    public function addCommand(string $binary, string $adminUser, string $sourceIp, string $obs = ''): bool
     {
         if (!$this->validateBinaryPath($binary)) return false;
         return $this->appendEntry($this->commandsFile, 'command', $binary, $adminUser, $sourceIp, $obs, 'add');
@@ -78,6 +81,7 @@ class SecurityGuardPlugin
      * @param string $sourceIp IP address of the administrator
      * @return bool True if removed, false if not found or failed
      */
+    public function removeCommand(string $binary, string $adminUser, string $sourceIp): bool
     {
         return $this->removeEntry($this->commandsFile, 'command', $binary, $adminUser, $sourceIp);
     }
@@ -87,6 +91,7 @@ class SecurityGuardPlugin
      *
      * @return array List of files with metadata
      */
+    public function listFiles(): array
     {
         return $this->loadConf($this->filesFile, ['file']);
     }
@@ -100,6 +105,7 @@ class SecurityGuardPlugin
      * @param string $obs Optional observation/reason
      * @return bool True on success, false otherwise
      */
+    public function addFile(string $path, string $adminUser, string $sourceIp, string $obs = ''): bool
     {
         if (!$this->validateFilePath($path)) return false;
         return $this->appendEntry($this->filesFile, 'file', $path, $adminUser, $sourceIp, $obs, 'add');
@@ -113,6 +119,7 @@ class SecurityGuardPlugin
      * @param string $sourceIp IP address of the administrator
      * @return bool True if removed, false if not found or failed
      */
+    public function removeFile(string $path, string $adminUser, string $sourceIp): bool
     {
         return $this->removeEntry($this->filesFile, 'file', $path, $adminUser, $sourceIp);
     }
@@ -122,6 +129,7 @@ class SecurityGuardPlugin
      *
      * @return array List of network entries (domain, url, ip, cidR) with metadata
      */
+    public function listNetwork(): array
     {
         return $this->loadConf($this->networkFile, ['domain', 'url', 'ip', 'cidr']);
     }
@@ -136,6 +144,7 @@ class SecurityGuardPlugin
      * @param string $obs Optional observation/reason
      * @return bool True on success, false otherwise
      */
+    public function addNetwork(string $type, string $value, string $adminUser, string $sourceIp, string $obs = ''): bool
     {
         if (!in_array($type, ['domain', 'url', 'ip', 'cidr'], true)) return false;
         if (!$this->validateNetworkValue($type, $value, $adminUser)) return false;
@@ -151,6 +160,7 @@ class SecurityGuardPlugin
      * @param string $sourceIp IP address of the administrator
      * @return bool True if removed, false if not found or failed
      */
+    public function removeNetwork(string $type, string $value, string $adminUser, string $sourceIp): bool
     {
         return $this->removeEntry($this->networkFile, $type, $value, $adminUser, $sourceIp);
     }
@@ -161,6 +171,7 @@ class SecurityGuardPlugin
      * @param string $path Path to the configuration file
      * @return array List of error messages, empty if valid
      */
+    public function validateConfFile(string $path): array
     {
         $errors = [];
         $lines  = @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -188,6 +199,7 @@ class SecurityGuardPlugin
      * @param string $binary Path to check
      * @return bool
      */
+    private function validateBinaryPath(string $binary): bool
     {
         /* Must be absolute */
         if (!str_starts_with($binary, '/')) return false;
@@ -204,6 +216,7 @@ class SecurityGuardPlugin
      * @param string $path Path to check
      * @return bool
      */
+    private function validateFilePath(string $path): bool
     {
         if (!str_starts_with($path, '/')) return false;
         if (str_contains($path, '..')) return false;
@@ -218,6 +231,7 @@ class SecurityGuardPlugin
      * @param string $adminUser The admin user (for wildcard logic checks)
      * @return bool
      */
+    private function validateNetworkValue(string $type, string $value, string $adminUser): bool
     {
         $value = strtolower(rtrim($value, '.'));
         switch ($type) {
@@ -247,6 +261,7 @@ class SecurityGuardPlugin
      * @param string $domain Domain or wildcard domain
      * @return bool
      */
+    private function isValidDomain(string $domain): bool
     {
         $d = ltrim($domain, '*.');
         return (bool)preg_match('/^[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?)*$/i', $d);
@@ -258,6 +273,7 @@ class SecurityGuardPlugin
      * @param string $cidr CIDR string
      * @return bool
      */
+    private function isValidCidr(string $cidr): bool
     {
         if (!str_contains($cidr, '/')) return false;
         [$ip, $prefix] = explode('/', $cidr, 2);
@@ -277,6 +293,7 @@ class SecurityGuardPlugin
      * @param string $domain Domain to search for
      * @return bool
      */
+    private function domainExistsInConf(string $domain): bool
     {
         $entries = $this->loadConf($this->networkFile, ['domain']);
         foreach ($entries as $e) {
@@ -296,6 +313,7 @@ class SecurityGuardPlugin
      * @param array $typeFilter Types of entries to load
      * @return array
      */
+    private function loadConf(string $file, array $typeFilter): array
     {
         $entries = [];
         $seen    = [];
@@ -335,6 +353,7 @@ class SecurityGuardPlugin
      * @param string $action Action name for logging
      * @return bool
      */
+    private function appendEntry(string $file, string $type, string $value, string $adminUser, string $sourceIp, string $obs, string $action): bool
     {
         /* Check for duplicate */
         $existing = $this->loadConf($file, [$type]);
@@ -366,6 +385,7 @@ class SecurityGuardPlugin
      * @param string $sourceIp Admin IP
      * @return bool
      */
+    private function removeEntry(string $file, string $type, string $value, string $adminUser, string $sourceIp): bool
     {
         $lines   = @file($file, FILE_IGNORE_NEW_LINES) ?: [];
         $normKey = strtolower(rtrim($value, '.'));
@@ -404,6 +424,7 @@ class SecurityGuardPlugin
      * @param string $content Content to append
      * @return bool
      */
+    private function atomicAppend(string $file, string $content): bool
     {
         $tmp = $file . '.tmp.' . getmypid();
         $existing = @file_get_contents($file) ?: '';
@@ -419,6 +440,7 @@ class SecurityGuardPlugin
      * @param string $content New content
      * @return bool
      */
+    private function atomicWrite(string $file, string $content): bool
     {
         $tmp = $file . '.tmp.' . getmypid();
         if (file_put_contents($tmp, $content, LOCK_EX) === false) return false;
@@ -442,6 +464,7 @@ class SecurityGuardPlugin
      * @param string $sourceIp Admin source IP
      * @return void
      */
+    private function auditLog(string $adminUser, string $action, string $file, string $entryType, string $entryValue, string $result, string $sourceIp): void
     {
         $ts = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
         $entry = json_encode([
