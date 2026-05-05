@@ -27,10 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         switch ($acao) {
             case 'add_command':
                 $comando = trim($_POST['comando'] ?? '');
-                $obs = trim($_POST['obs'] ?? 'Adicionado via Painel');
+                $obs = trim($_POST['obs'] ?? 'Added via Panel');
                 if (!empty($comando)) {
                     $plugin->addCommand($comando, $adminUser, $obs);
-                    $mensagem = "Comando '$comando' adicionado com sucesso!";
+                    $mensagem = "Command '$comando' added successfully!";
                 }
                 break;
                 
@@ -38,16 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $comando = trim($_POST['comando'] ?? '');
                 if (!empty($comando)) {
                     $plugin->removeCommand($comando, $adminUser);
-                    $mensagem = "Comando '$comando' removido com sucesso!";
+                    $mensagem = "Command '$comando' removed successfully!";
                 }
                 break;
 
             case 'add_file':
                 $arquivo = trim($_POST['arquivo'] ?? '');
-                $obs = trim($_POST['obs'] ?? 'Adicionado via Painel');
+                $obs = trim($_POST['obs'] ?? 'Added from Panel');
                 if (!empty($arquivo)) {
                     $plugin->addFile($arquivo, $adminUser, $obs);
-                    $mensagem = "Arquivo/Diretório '$arquivo' adicionado com sucesso!";
+                    $mensagem = "File/Directory '$arquivo' added successfully!";
                 }
                 break;
                 
@@ -55,17 +55,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $arquivo = trim($_POST['arquivo'] ?? '');
                 if (!empty($arquivo)) {
                     $plugin->removeFile($arquivo, $adminUser);
-                    $mensagem = "Arquivo '$arquivo' removido com sucesso!";
+                    $mensagem = "File '$arquivo' removed successfully!";
                 }
                 break;
 
             case 'add_network':
                 $tipo = trim($_POST['tipo'] ?? 'domain');
                 $valor = trim($_POST['valor'] ?? '');
-                $obs = trim($_POST['obs'] ?? 'Adicionado via Painel');
+                $obs = trim($_POST['obs'] ?? 'Added via Panel');
                 if (!empty($valor)) {
                     $plugin->addNetwork($tipo, $valor, $adminUser, $obs);
-                    $mensagem = "Regra de rede '$valor' adicionada com sucesso!";
+                    $mensagem = "Network rule '$valor' added successfully!";
                 }
                 break;
                 
@@ -74,12 +74,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $valor = trim($_POST['valor'] ?? '');
                 if (!empty($valor)) {
                     $plugin->removeNetwork($tipo, $valor, $adminUser);
-                    $mensagem = "Regra de rede '$valor' removida com sucesso!";
+                    $mensagem = "Network rule '$valor' removed successfully!";
                 }
                 break;
         }
     } catch (Exception $e) {
-        $mensagem = "Erro: " . $e->getMessage();
+        $mensagem = "Error: " . $e->getMessage();
         $tipoMensagem = 'danger';
     }
 }
@@ -96,8 +96,8 @@ $redes = $plugin->listNetwork();
 =========================================== -->
 <div class="container-fluid" style="margin-top: 20px;">
     
-    <h2>🛡️ PHP Security Guard - Gerenciador</h2>
-    <p class="text-muted">Gerencie as regras de segurança e whitelists da extensão PHP Security Guard.</p>
+    <h2>🛡️ PHP Security Guard - Manager</h2>
+    <p class="text-muted">Manage security rules and whitelists for the PHP Security Guard extension.</p>
     
     <?php if ($mensagem): ?>
         <div class="alert alert-<?php echo $tipoMensagem; ?> alert-dismissible fade in" role="alert">
@@ -110,9 +110,9 @@ $redes = $plugin->listNetwork();
 
     <!-- Abas de Navegação -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active"><a href="#commands" aria-controls="commands" role="tab" data-toggle="tab">Comandos</a></li>
-        <li role="presentation"><a href="#files" aria-controls="files" role="tab" data-toggle="tab">Arquivos</a></li>
-        <li role="presentation"><a href="#network" aria-controls="network" role="tab" data-toggle="tab">Rede/Domínios</a></li>
+        <li role="presentation" class="active"><a href="#commands" aria-controls="commands" role="tab" data-toggle="tab">Commands</a></li>
+        <li role="presentation"><a href="#files" aria-controls="files" role="tab" data-toggle="tab">Files</a></li>
+        <li role="presentation"><a href="#network" aria-controls="network" role="tab" data-toggle="tab">Network/Domains</a></li>
     </ul>
 
     <!-- Conteúdo das Abas -->
@@ -122,20 +122,20 @@ $redes = $plugin->listNetwork();
         <div role="tabpanel" class="tab-pane active" id="commands">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <strong>Adicionar Novo Comando Permitido</strong>
+                    <strong>Add New Allowed Command</strong>
                 </div>
                 <div class="panel-body">
                     <form method="POST" class="form-inline">
                         <input type="hidden" name="action" value="add_command">
                         <div class="form-group">
-                            <label>Caminho do Binário:</label>
-                            <input type="text" name="comando" class="form-control" placeholder="ex: /usr/bin/git" required style="width: 250px;">
+                            <label>Binary Path:</label>
+                            <input type="text" name="comando" class="form-control" placeholder="e.g. /usr/bin/git" required style="width: 250px;">
                         </div>
                         <div class="form-group">
-                            <label>Observação:</label>
-                            <input type="text" name="obs" class="form-control" placeholder="Motivo da permissão" style="width: 250px;">
+                            <label>Note:</label>
+                            <input type="text" name="obs" class="form-control" placeholder="Reason for allowance" style="width: 250px;">
                         </div>
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Adicionar</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Add</button>
                     </form>
                 </div>
             </div>
@@ -143,11 +143,11 @@ $redes = $plugin->listNetwork();
             <table class="table table-striped table-bordered table-hover">
                 <thead>
                     <tr>
-                        <th>Binário</th>
-                        <th>Adicionado Em</th>
-                        <th>Usuário Admin</th>
-                        <th>Observação</th>
-                        <th width="100">Ação</th>
+                        <th>Binary</th>
+                        <th>Added On</th>
+                        <th>Admin User</th>
+                        <th>Note</th>
+                        <th width="100">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -161,7 +161,7 @@ $redes = $plugin->listNetwork();
                             <form method="POST" style="margin:0;">
                                 <input type="hidden" name="action" value="remove_command">
                                 <input type="hidden" name="comando" value="<?php echo htmlspecialchars($c['value']); ?>">
-                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Tem certeza?');">Remover</button>
+                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Are you sure?');">Remove</button>
                             </form>
                         </td>
                     </tr>
@@ -174,20 +174,20 @@ $redes = $plugin->listNetwork();
         <div role="tabpanel" class="tab-pane" id="files">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <strong>Adicionar Arquivo/Diretório Permitido</strong>
+                    <strong>Add Allowed File/Directory</strong>
                 </div>
                 <div class="panel-body">
                     <form method="POST" class="form-inline">
                         <input type="hidden" name="action" value="add_file">
                         <div class="form-group">
-                            <label>Caminho:</label>
-                            <input type="text" name="arquivo" class="form-control" placeholder="ex: /etc/passwd ou /var/www/" required style="width: 250px;">
+                            <label>Path:</label>
+                            <input type="text" name="arquivo" class="form-control" placeholder="e.g. /etc/passwd or /var/www/" required style="width: 250px;">
                         </div>
                         <div class="form-group">
-                            <label>Observação:</label>
-                            <input type="text" name="obs" class="form-control" placeholder="Motivo da permissão" style="width: 250px;">
+                            <label>Note:</label>
+                            <input type="text" name="obs" class="form-control" placeholder="Reason for allowance" style="width: 250px;">
                         </div>
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Adicionar</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Add</button>
                     </form>
                 </div>
             </div>
@@ -195,11 +195,11 @@ $redes = $plugin->listNetwork();
             <table class="table table-striped table-bordered table-hover">
                 <thead>
                     <tr>
-                        <th>Arquivo/Diretório</th>
-                        <th>Adicionado Em</th>
-                        <th>Usuário Admin</th>
-                        <th>Observação</th>
-                        <th width="100">Ação</th>
+                        <th>File/Directory</th>
+                        <th>Added On</th>
+                        <th>Admin User</th>
+                        <th>Note</th>
+                        <th width="100">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -213,7 +213,7 @@ $redes = $plugin->listNetwork();
                             <form method="POST" style="margin:0;">
                                 <input type="hidden" name="action" value="remove_file">
                                 <input type="hidden" name="arquivo" value="<?php echo htmlspecialchars($f['value']); ?>">
-                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Tem certeza?');">Remover</button>
+                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Are you sure?');">Remove</button>
                             </form>
                         </td>
                     </tr>
@@ -226,29 +226,29 @@ $redes = $plugin->listNetwork();
         <div role="tabpanel" class="tab-pane" id="network">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <strong>Adicionar Regra de Rede</strong>
+                    <strong>Add Network Rule</strong>
                 </div>
                 <div class="panel-body">
                     <form method="POST" class="form-inline">
                         <input type="hidden" name="action" value="add_network">
                         <div class="form-group">
-                            <label>Tipo:</label>
+                            <label>Type:</label>
                             <select name="tipo" class="form-control">
-                                <option value="domain">Domínio (ex: api.github.com)</option>
-                                <option value="url">URL (ex: https://api.stripe.com)</option>
-                                <option value="ip">IP Fixo (ex: 8.8.8.8)</option>
-                                <option value="cidr">Faixa de IP (CIDR ex: 10.0.0.0/8)</option>
+                                <option value="domain">Domain (e.g. api.github.com)</option>
+                                <option value="url">URL (e.g. https://api.stripe.com)</option>
+                                <option value="ip">Fixed IP (e.g. 8.8.8.8)</option>
+                                <option value="cidr">IP Range (CIDR e.g. 10.0.0.0/8)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Valor:</label>
+                            <label>Value:</label>
                             <input type="text" name="valor" class="form-control" required style="width: 250px;">
                         </div>
                         <div class="form-group">
-                            <label>Observação:</label>
-                            <input type="text" name="obs" class="form-control" placeholder="Motivo" style="width: 200px;">
+                            <label>Note:</label>
+                            <input type="text" name="obs" class="form-control" placeholder="Reason" style="width: 200px;">
                         </div>
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Adicionar</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Add</button>
                     </form>
                 </div>
             </div>
@@ -256,12 +256,12 @@ $redes = $plugin->listNetwork();
             <table class="table table-striped table-bordered table-hover">
                 <thead>
                     <tr>
-                        <th>Tipo</th>
-                        <th>Destino (Valor)</th>
-                        <th>Adicionado Em</th>
-                        <th>Usuário Admin</th>
-                        <th>Observação</th>
-                        <th width="100">Ação</th>
+                        <th>Type</th>
+                        <th>Target (Value)</th>
+                        <th>Added On</th>
+                        <th>Admin User</th>
+                        <th>Note</th>
+                        <th width="100">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -277,7 +277,7 @@ $redes = $plugin->listNetwork();
                                 <input type="hidden" name="action" value="remove_network">
                                 <input type="hidden" name="tipo" value="<?php echo htmlspecialchars($n['type']); ?>">
                                 <input type="hidden" name="valor" value="<?php echo htmlspecialchars($n['value']); ?>">
-                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Tem certeza?');">Remover</button>
+                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Are you sure?');">Remove</button>
                             </form>
                         </td>
                     </tr>
