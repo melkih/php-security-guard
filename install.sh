@@ -303,6 +303,46 @@ do_verify() {
     "$PHP_BIN" -r "phpinfo();" 2>/dev/null | grep -i "security_guard" | head -5 || true
 }
 
+# ── Instalação do Plugin CWP ─────────────────────────────────────────────
+
+install_cwp_plugin() {
+    heading "Instalando Plugin CWP..."
+    
+    local cwp_modules="/usr/local/cwpsrv/htdocs/resources/admin/modules"
+    local cwp_3rdparty="/usr/local/cwpsrv/htdocs/resources/admin/include/3rdparty.php"
+    
+    if [[ ! -d "$cwp_modules" ]]; then
+        warn "Diretório do CWP não encontrado ($cwp_modules). Pulando plugin."
+        return
+    fi
+    
+    cp -f "$SCRIPT_DIR/cwp-plugin/module_security_guard.php" "$cwp_modules/"
+    cp -f "$SCRIPT_DIR/cwp-plugin/SecurityGuardPlugin.php" "$cwp_modules/"
+    chown cwpsrv:cwpsrv "$cwp_modules/module_security_guard.php" "$cwp_modules/SecurityGuardPlugin.php"
+    
+    info "Arquivos do plugin copiados para $cwp_modules/"
+    
+    # Adicionar permissões no diretório de config
+    chown -R cwpsrv:cwpsrv "${CONF_DIR}"
+    chmod 770 "${CONF_DIR}"
+    chmod 660 "${CONF_DIR}"/*.conf 2>/dev/null || true
+    info "Permissões ajustadas para cwpsrv em ${CONF_DIR}/"
+    
+    # Verifica e injeta no 3rdparty.php
+    if [[ ! -f "$cwp_3rdparty" ]]; then
+        mkdir -p "$(dirname "$cwp_3rdparty")"
+        touch "$cwp_3rdparty"
+        chown cwpsrv:cwpsrv "$cwp_3rdparty"
+    fi
+    
+    if ! grep -q "?module=security_guard" "$cwp_3rdparty"; then
+        echo '<li><a href="?module=security_guard"><span class="icon16 icomoon-icon-arrow-right-3"></span>Security Guard</a></li>' >> "$cwp_3rdparty"
+        info "Menu do Security Guard adicionado ao CWP (Developer Menu)."
+    else
+        info "Menu já existe no CWP."
+    fi
+}
+
 # ── Sumário final ────────────────────────────────────────────────────────
 
 print_summary() {
@@ -365,4 +405,9 @@ fi
 do_build
 do_configure
 do_verify
+
+if [[ "$PANEL" == "cwp" ]]; then
+    install_cwp_plugin
+fi
+
 print_summary

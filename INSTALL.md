@@ -490,28 +490,18 @@ O projeto inclui uma classe PHP pronta para gerenciar as whitelists da extensão
 
 ### Passos de Integração
 
-1. **Copiar a Classe:**
-   Copie o arquivo `cwp-plugin/SecurityGuardPlugin.php` para o diretório de módulos customizados do seu painel CWP (normalmente `/usr/local/cwpsrv/htdocs/resources/admin/modules/` ou um subdiretório de includes do seu tema/módulo).
+A partir de agora, o próprio script `install.sh` faz a instalação automática do plugin se detectar que você está usando o painel CWP! 
 
-2. **Ajuste de Permissões (Crítico):**
-   Para que a interface web do CWP consiga gravar as regras, o usuário sob o qual o painel CWP roda (geralmente `cwpsrv`) deve ter permissão de escrita no diretório `/etc/security_guard/`.
-   Execute no terminal:
-   ```bash
-   chown -R cwpsrv:cwpsrv /etc/security_guard
-   chmod 770 /etc/security_guard
-   chmod 660 /etc/security_guard/*.conf
-   ```
+O instalador irá automaticamente:
+1. Copiar os arquivos `module_security_guard.php` e `SecurityGuardPlugin.php` para `/usr/local/cwpsrv/htdocs/resources/admin/modules/`
+2. Ajustar as permissões de pastas (`cwpsrv:cwpsrv`) para o diretório `/etc/security_guard`
+3. Inserir o link do menu no arquivo `3rdparty.php` (na seção *Developer Menu*)
 
-3. **Instalação da Tela do Painel (Frontend + Backend):**
-   O projeto agora inclui uma interface gráfica pronta (`index.php`) construída com Bootstrap, pronta para ser acoplada ao CWP.
-   Copie o arquivo `cwp-plugin/index.php` para o mesmo diretório onde você colocou a classe `SecurityGuardPlugin.php` (por exemplo: `/usr/local/cwpsrv/htdocs/resources/admin/modules/security_guard/`).
+Portanto, **basta rodar o instalador `bash install.sh` normalmente**.
 
-4. **Acesso no Painel:**
-   No CWP, o nome do módulo na URL deve corresponder exatamente ao nome da pasta que você criou. 
-   Por exemplo, se você colocou os arquivos dentro da pasta `mk`, a URL será:
-   `https://seu-ip:2031/admin/index.php?module=mk`
-   
-   *Nota: O script `index.php` foi feito para rodar integrado ao fluxo do CWP e já cuida do processamento dos formulários e da renderização das tabelas HTML (Comandos, Arquivos e Redes).*
+### Acesso no Painel
+Após a instalação, faça login no CWP Admin, role o menu lateral esquerdo até a parte inferior e expanda a seção **Developer Menu**. Você verá o link **Security Guard**.
+Se preferir, o link direto será: `https://seu-ip:2031/admin/index.php?module=security_guard`
 
 ---
 
