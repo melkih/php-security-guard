@@ -8,6 +8,7 @@
 #define SG_NETWORK_POLICY_H
 
 #include "security_guard.h"
+#include "utils.h"
 
 /* Evaluate a network-group function call. Returns heap-allocated decision. */
 sg_decision_t *sg_network_evaluate(const char *fname, zend_execute_data *execute_data);
