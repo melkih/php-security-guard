@@ -502,20 +502,31 @@ O projeto inclui uma classe PHP pronta para gerenciar as whitelists da extensão
    chmod 660 /etc/security_guard/*.conf
    ```
 
-3. **Uso no Backend (Controller):**
-   Dentro do seu script do módulo CWP, instancie a classe para gerenciar as regras:
+3. **Como usar no código do seu módulo (Backend/Controller):**
+   O arquivo `SecurityGuardPlugin.php` não é uma tela gráfica pronta. Ele é uma biblioteca (uma "ferramenta" em código) que seu módulo do CWP vai usar para conversar com a extensão.
+   
+   Você deve criar o seu próprio arquivo PHP do módulo (por exemplo: `module_security_guard.php`) no CWP e incluir essa classe nele. Sempre que o administrador clicar em "Salvar" na tela do CWP, seu arquivo PHP chamará os métodos dessa classe para gravar as regras.
 
+   **Exemplo de integração no seu arquivo PHP do módulo:**
    ```php
+   // 1. Inclui o arquivo da biblioteca
    require_once 'SecurityGuardPlugin.php';
 
-   // Instancia o plugin (usa os caminhos padrão)
+   // 2. Cria o gerenciador de regras
    $plugin = new SecurityGuardPlugin();
 
-   // Exemplo: Adicionando um novo comando permitido
-   $adminUser = 'root'; // ou recupere o usuário logado no CWP
-   $plugin->addCommand('/usr/bin/git', $adminUser, 'Permitir deploy automático via Git');
+   // 3. Se o administrador enviou um formulário adicionando um comando
+   if (isset($_POST['action']) && $_POST['action'] === 'add_command') {
+       $novoComando = $_POST['comando']; // ex: /usr/bin/git
+       $adminUser = 'admin'; // Usuário logado no CWP
+       $obs = 'Adicionado pelo painel';
+       
+       // Chama o plugin para salvar o comando no arquivo .conf
+       $plugin->addCommand($novoComando, $adminUser, $obs);
+       echo "Comando salvo com sucesso!";
+   }
 
-   // Exemplo: Listando regras de rede
+   // Exemplo: Listando regras de rede para montar uma tabela HTML
    $redes = $plugin->listNetwork();
    foreach ($redes as $regra) {
        echo "Tipo: {$regra['type']}, Valor: {$regra['value']}, Adicionado por: {$regra['user']}\n";
@@ -523,7 +534,7 @@ O projeto inclui uma classe PHP pronta para gerenciar as whitelists da extensão
    ```
 
 4. **Interface Gráfica (Frontend):**
-   Você pode acoplar os métodos desta classe (como `addCommand`, `removeCommand`, `listCommands`) aos botões e tabelas HTML da sua view dentro do módulo CWP, criando uma interface rica para seus clientes ou administradores controlarem a segurança.
+   No CWP, a interface visual (botões, campos de texto e tabelas) é construída por você usando HTML/Twig. Os botões da interface devem enviar requisições (via POST ou Ajax) para o código PHP (backend) mostrado no passo 3, que por sua vez usará o `SecurityGuardPlugin` para gravar as regras nos arquivos `/etc/security_guard/`.
 
 ---
 
