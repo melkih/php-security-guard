@@ -72,7 +72,7 @@ discover_cwp_versions() {
         local phpbin="$dir/bin/php"
         [[ -x "$phpize" && -x "$phpbin" ]] || continue
         local ver
-        ver=$("$phpbin" -r 'echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;' 2>/dev/null) || continue
+        ver=$("$phpbin" -n -r 'echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;' 2>/dev/null) || continue
         versions+=("${ver}:${dir%/}")
     done
     printf '%s\n' "${versions[@]}"
@@ -86,7 +86,7 @@ discover_cpanel_versions() {
         local phpbin="$dir/root/usr/bin/php"
         [[ -x "$phpize" && -x "$phpbin" ]] || continue
         local ver
-        ver=$("$phpbin" -r 'echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;' 2>/dev/null) || continue
+        ver=$("$phpbin" -n -r 'echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;' 2>/dev/null) || continue
         versions+=("${ver}:${dir%/}")
     done
     printf '%s\n' "${versions[@]}"
@@ -102,7 +102,7 @@ discover_generic_versions() {
         [[ -x "$phpize" ]] || phpize="$(dirname "$phpbin")/phpize"
         [[ -x "$phpize" ]] || continue
         local ver
-        ver=$("$phpbin" -r 'echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;' 2>/dev/null) || continue
+        ver=$("$phpbin" -n -r 'echo PHP_MAJOR_VERSION . PHP_MINOR_VERSION;' 2>/dev/null) || continue
         local phpconfig="${phpize/phpize/php-config}"
         [[ -x "$phpconfig" ]] || phpconfig="$(dirname "$phpbin")/php-config"
         versions+=("${ver}:${phpbin}|${phpize}|${phpconfig}")
