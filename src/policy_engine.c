@@ -164,20 +164,22 @@ sg_decision_t *sg_evaluate_call(const char *fname, zend_execute_data *execute_da
  * Optionally emits a PHP warning.
  *
  * @param fname Function name being blocked.
- * @param execute_data Zend execution data.
+ * @param return_value The Zend return value pointer.
  * @param dec Security decision containing the block reason.
  */
-void sg_block_call(const char *fname, zend_execute_data *execute_data,
+void sg_block_call(const char *fname, zval *return_value,
                    sg_decision_t *dec)
 {
-	zval *retval = execute_data->return_value;
-	if (!retval) return;
+	if (!return_value) return;
 
-	/* shell_exec returns NULL on failure */
+	/* Ensure proper return types for blocked functions */
 	if (strcmp(fname, "shell_exec") == 0) {
-		ZVAL_NULL(retval);
+		ZVAL_NULL(return_value);
+	} else if (strcmp(fname, "curl_multi_exec") == 0) {
+		/* curl_multi_exec returns int (e.g. CURLM_OUT_OF_MEMORY = 27) */
+		ZVAL_LONG(return_value, 27);
 	} else {
-		ZVAL_FALSE(retval);
+		ZVAL_FALSE(return_value);
 	}
 
 	if (SG_G(emit_php_warning)) {

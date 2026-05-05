@@ -23,10 +23,10 @@ function run_test($name, $callback) {
         $result = $callback();
         $output = ob_get_clean();
         
-        // Se retornou falso, ou vazio e sem erros lançados, 
-        // a extensão pode ter bloqueado e retornado false em modo 'block'
-        if ($result === false) {
-            echo " BLOQUEADO (retornou false)\n";
+        // Se retornou falso, nulo ou vazio e sem erros lançados, 
+        // a extensão pode ter bloqueado e retornado false ou null
+        if ($result === false || $result === null) {
+            echo " BLOQUEADO (retornou false/null)\n";
         } else {
             echo " PERMITIDO / EXECUTADO\n";
         }

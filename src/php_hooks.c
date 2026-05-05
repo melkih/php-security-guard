@@ -148,7 +148,7 @@ void sg_curl_track_close(zval *handle)
  *
  * @param execute_data Zend execution data.
  */
-static void sg_handle_curl_init(zend_execute_data *execute_data)
+static void sg_handle_curl_init(zend_execute_data *execute_data, zval *return_value, int is_internal)
 {
 	/* curl_init(?string $url = null): CurlHandle */
 	uint32_t argc = ZEND_CALL_NUM_ARGS(execute_data);
@@ -158,16 +158,10 @@ static void sg_handle_curl_init(zend_execute_data *execute_data)
 		if (arg && Z_TYPE_P(arg) == IS_STRING) url = Z_STRVAL_P(arg);
 	}
 	/* We call original first, then register the handle. */
-	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
-		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
-		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
-	} else {
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
-	}
+	sg_call_original(execute_data, return_value, is_internal);
 
-	zval *retval = execute_data->return_value;
-	if (retval && (Z_TYPE_P(retval) == IS_OBJECT || Z_TYPE_P(retval) == IS_RESOURCE)) {
-		sg_curl_track_init(retval, url);
+	if (return_value && (Z_TYPE_P(return_value) == IS_OBJECT || Z_TYPE_P(return_value) == IS_RESOURCE)) {
+		sg_curl_track_init(return_value, url);
 	}
 }
 
@@ -177,7 +171,7 @@ static void sg_handle_curl_init(zend_execute_data *execute_data)
  *
  * @param execute_data Zend execution data.
  */
-static void sg_handle_curl_setopt(zend_execute_data *execute_data)
+static void sg_handle_curl_setopt(zend_execute_data *execute_data, zval *return_value, int is_internal)
 {
 	uint32_t argc = ZEND_CALL_NUM_ARGS(execute_data);
 	if (argc >= 3) {
@@ -188,12 +182,7 @@ static void sg_handle_curl_setopt(zend_execute_data *execute_data)
 			sg_curl_track_setopt(handle, Z_LVAL_P(opt), val);
 		}
 	}
-	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
-		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
-		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
-	} else {
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
-	}
+	sg_call_original(execute_data, return_value, is_internal);
 }
 
 /**
@@ -202,7 +191,7 @@ static void sg_handle_curl_setopt(zend_execute_data *execute_data)
  *
  * @param execute_data Zend execution data.
  */
-static void sg_handle_curl_setopt_array(zend_execute_data *execute_data)
+static void sg_handle_curl_setopt_array(zend_execute_data *execute_data, zval *return_value, int is_internal)
 {
 	uint32_t argc = ZEND_CALL_NUM_ARGS(execute_data);
 	if (argc >= 2) {
@@ -212,12 +201,7 @@ static void sg_handle_curl_setopt_array(zend_execute_data *execute_data)
 			sg_curl_track_setopt_array(handle, Z_ARRVAL_P(opts));
 		}
 	}
-	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
-		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
-		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
-	} else {
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
-	}
+	sg_call_original(execute_data, return_value, is_internal);
 }
 
 /**
@@ -226,19 +210,14 @@ static void sg_handle_curl_setopt_array(zend_execute_data *execute_data)
  *
  * @param execute_data Zend execution data.
  */
-static void sg_handle_curl_close(zend_execute_data *execute_data)
+static void sg_handle_curl_close(zend_execute_data *execute_data, zval *return_value, int is_internal)
 {
 	uint32_t argc = ZEND_CALL_NUM_ARGS(execute_data);
 	if (argc >= 1) {
 		zval *handle = ZEND_CALL_ARG(execute_data, 1);
 		if (handle) sg_curl_track_close(handle);
 	}
-	if (execute_data->func->type == ZEND_INTERNAL_FUNCTION) {
-		if (sg_original_execute_internal) sg_original_execute_internal(execute_data, execute_data->return_value);
-		else execute_data->func->internal_function.handler(execute_data, execute_data->return_value);
-	} else {
-		if (sg_original_execute_ex) sg_original_execute_ex(execute_data);
-	}
+	sg_call_original(execute_data, return_value, is_internal);
 }
 
 /* ---- main hook ---- */
@@ -286,19 +265,19 @@ static void sg_execute_common(zend_execute_data *execute_data, zval *return_valu
 
 	/* Handle curl tracking helpers */
 	if (strcmp(fname, "curl_init") == 0) {
-		sg_handle_curl_init(execute_data);
+		sg_handle_curl_init(execute_data, return_value, is_internal);
 		return;
 	}
 	if (strcmp(fname, "curl_setopt") == 0) {
-		sg_handle_curl_setopt(execute_data);
+		sg_handle_curl_setopt(execute_data, return_value, is_internal);
 		return;
 	}
 	if (strcmp(fname, "curl_setopt_array") == 0) {
-		sg_handle_curl_setopt_array(execute_data);
+		sg_handle_curl_setopt_array(execute_data, return_value, is_internal);
 		return;
 	}
 	if (strcmp(fname, "curl_close") == 0) {
-		sg_handle_curl_close(execute_data);
+		sg_handle_curl_close(execute_data, return_value, is_internal);
 		return;
 	}
 
@@ -324,7 +303,7 @@ static void sg_execute_common(zend_execute_data *execute_data, zval *return_valu
 		}
 	} else {
 		/* Block: do NOT call original */
-		sg_block_call(fname, execute_data, dec);
+		sg_block_call(fname, return_value, dec);
 		if (SG_G(log_denied)) {
 			sg_log_deny(dec);
 		}
