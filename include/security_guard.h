@@ -173,6 +173,7 @@ ZEND_BEGIN_MODULE_GLOBALS(security_guard)
 	HashTable   *curl_handles;   /* zval resource -> sg_curl_handle_t* */
 	char        *current_user;   /* effective Linux user for this request */
 	int          current_uid;
+	long         log_rate_count; /* rate limit counter per request */
 ZEND_END_MODULE_GLOBALS(security_guard)
 
 ZEND_EXTERN_MODULE_GLOBALS(security_guard)

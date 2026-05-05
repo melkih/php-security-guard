@@ -16,9 +16,6 @@
 #include <time.h>
 #include <unistd.h>
 
-/* Simple per-request rate limit counter */
-static ZEND_TLS long sg_rate_count = 0;
-
 /**
  * Checks if the log rate limit has been reached for the current request.
  *
@@ -28,8 +25,8 @@ int sg_log_rate_check(void)
 {
 	zend_long limit = SG_G(log_rate_limit);
 	if (limit <= 0) return 1;
-	if (sg_rate_count >= limit) return 0;
-	sg_rate_count++;
+	if (SG_G(log_rate_count) >= limit) return 0;
+	SG_G(log_rate_count)++;
 	return 1;
 }
 

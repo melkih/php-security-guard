@@ -169,6 +169,7 @@ PHP_RINIT_FUNCTION(security_guard)
 	sg_get_effective_user(user_buf, sizeof(user_buf), &uid);
 	SG_G(current_user) = estrdup(user_buf);
 	SG_G(current_uid)  = uid;
+	SG_G(log_rate_count) = 0;
 
 	/* curl handle table (per-request lifetime) */
 	if (!SG_G(curl_handles)) {
